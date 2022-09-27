@@ -1,65 +1,76 @@
 package config
 
 import (
-	"crypto/aes"
-	"crypto/cipher"
-	"crypto/rand"
-	"io"
+	"errors"
+	"fmt"
+	"github.com/leszkolukasz/crunchyroll-notifier/utility"
+	"os"
 )
 
-func Import() {
+func Import(tmpOut **os.File) {
+	secret := []byte(utility.GetSecret())
+	ensureFileExists("./config/config.json")
+	encrypted, err := os.ReadFile("./config/config.json")
+	if err != nil {
+		panic(err)
+	}
 
+	decrypted := utility.Decrypt(encrypted, secret)
+	tmp, err := os.CreateTemp("", "tmp*.json")
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = tmp.WriteString(decrypted)
+	if err != nil {
+		panic(err)
+	}
+
+	*tmpOut = tmp
 }
 
-func Export() {
+func Export(tmp *os.File) {
+	secret := []byte(utility.GetSecret())
 
+	stats, err := tmp.Stat()
+	if err != nil {
+		panic(err)
+	}
+
+	decrypted := make([]byte, stats.Size())
+	_, err = tmp.Seek(0, 0)
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = tmp.Read(decrypted)
+	if err != nil {
+		panic(err)
+	}
+
+	encrypted := utility.Encrypt(string(decrypted), secret)
+	err = os.WriteFile("./config/config.json", encrypted, 666)
+	if err != nil {
+		panic(err)
+	}
 }
 
-func Decrypt(encrypted []byte, secret []byte) string {
-	//encrypted, err := os.ReadFile("./config.json")
-	//if err != nil {
-	//	panic(err)
-	//}
+func GenerateConfiguration() {
+	secret := []byte(utility.GetSecret())
+	encrypted := utility.Encrypt("{\n\"users\": \"10\"\n}", secret)
 
-	c, err := aes.NewCipher(secret)
+	err := os.WriteFile("./config/config.json", encrypted, 666)
 	if err != nil {
 		panic(err)
 	}
-
-	gcm, err := cipher.NewGCM(c)
-	if err != nil {
-		panic(err)
-	}
-
-	nonceSize := gcm.NonceSize()
-	if len(encrypted) < nonceSize {
-		panic(err)
-	}
-
-	nonce, ciphertext := encrypted[:nonceSize], encrypted[nonceSize:]
-	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
-	if err != nil {
-		panic(err)
-	}
-
-	return string(plaintext)
 }
 
-func Encrypt(decrypted string, secret []byte) []byte {
-	c, err := aes.NewCipher(secret)
-	if err != nil {
-		panic(err)
+func ensureFileExists(path string) {
+	if _, err := os.Stat(path); !errors.Is(err, os.ErrNotExist) {
+		return
 	}
 
-	gcm, err := cipher.NewGCM(c)
-	if err != nil {
-		panic(err)
-	}
-
-	nonce := make([]byte, gcm.NonceSize())
-	if _, err = io.ReadFull(rand.Reader, nonce); err != nil {
-		panic(err)
-	}
-
-	return gcm.Seal(nonce, nonce, []byte(decrypted), nil)
+	fmt.Println("Configuration file does not exist. Creating...")
+	GenerateConfiguration()
+	fmt.Println("File created")
 }
