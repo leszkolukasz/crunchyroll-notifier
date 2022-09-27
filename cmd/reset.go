@@ -8,8 +8,9 @@ import (
 
 var resetCmd = &cobra.Command{
 	Use:   "reset",
-	Short: "Generates empty config file",
-	Long:  `Application requires config file to exist. `,
+	Short: "Resets application to default settings",
+	Long:  "Resets application to default settings. Use this if application does not work. WARNING: This will remove all added users and configs",
+
 	Run: func(cmd *cobra.Command, args []string) {
 		config.GenerateConfiguration()
 		panic("OK") // Hack

@@ -57,7 +57,7 @@ func Export(tmp *os.File) {
 
 func GenerateConfiguration() {
 	secret := []byte(utility.GetSecret())
-	encrypted := utility.Encrypt("{\n\"users\": \"10\"\n}", secret)
+	encrypted := utility.Encrypt(`{"Users": [{"Email": "email", "Password": "password", "Settings": null}]}`, secret)
 
 	err := os.WriteFile("./config/config.json", encrypted, 666)
 	if err != nil {

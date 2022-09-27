@@ -10,13 +10,9 @@ import (
 
 var (
 	rootCmd = &cobra.Command{
-		Use:   "cobra-cli",
-		Short: "A generator for Cobra based Applications",
-		Long: `Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-		Run: func(cmd *cobra.Command, args []string) {
-		},
+		Use:   "crunchy",
+		Short: "A notifier for Crunchyroll",
+		Long:  "Notifies about newly released episodes on Crunchyroll using system notification",
 	}
 )
 
